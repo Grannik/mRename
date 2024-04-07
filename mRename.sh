@@ -1,103 +1,95 @@
 #!/bin/bash
- E='echo -e';
- e='echo -en';
-#
- i=0; CLEAR; CIVIS;NULL=/dev/null
- trap "R;exit" 2
- ESC=$( $e "\e")
- TPUT(){ $e "\e[${1};${2}H" ;}
- CLEAR(){ $e "\ec";}
- CIVIS(){ $e "\e[?25l";}
- R(){ CLEAR ;stty sane;CLEAR;};                 # в этом варианте фон прозрачный
-#
- ARROW(){ IFS= read -s -n1 key 2>/dev/null >&2
-           if [[ $key = $ESC ]];then
-              read -s -n1 key 2>/dev/null >&2;
-              if [[ $key = \[ ]]; then
-                 read -s -n1 key 2>/dev/null >&2;
-                 if [[ $key = A ]]; then echo up;fi
-                 if [[ $key = B ]];then echo dn;fi
-              fi
-           fi
-           if [[ "$key" == "$($e \\x0A)" ]];then echo enter;fi;}
- UNMARK(){ $e "\e[0m";}
- MARK(){ $e "\e[30;47m";}
-#
- HEAD()
+ trap 'echo -en "\ec"; stty sane; exit' SIGINT
+ aa=0
+ A(){ for b in $(seq 0 27);do E${b};done; }
+ B()
 {
- for (( a=2; a<=40; a++ ))
-          do
-              TPUT $a 1
-                        $E "\e[47;30m│\e[0m                                                                                \e[47;30m│\e[0m";
-          done
-              TPUT  1 1;$E "\033[0m\033[47;30m┌────────────────────────────────────────────────────────────────────────────────┐\033[0m"
-              TPUT  3 3;$E "\e[1;36m*** rename ***\e[0m";
-              TPUT  4 3;$E "\e[2mRenames multiple files                        переименовывает несколько файлов\e[0m";
-              TPUT  5 1;$E "\e[47;30m├\e[0m\e[1;30m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
-              TPUT 15 1;$E "\e[47;30m├\e[0m\e[1;30m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
-              TPUT 16 3;$E "\e[36m Oпции                                                               Options\e[0m";
-              TPUT 29 1;$E "\e[47;30m├\e[0m\e[1;30m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
-              TPUT 35 1;$E "\e[47;30m├\e[0m\e[1;30m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
-              TPUT 37 1;$E "\e[47;30m├\e[0m\e[1;30m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
-              TPUT 38 3;$E "\e[2m Up \xE2\x86\x91 \xE2\x86\x93 Down Select Enter \e[0m";
+  local c
+  IFS= read -s -n1 c 2>/dev/null >&2
+  if [[ $c = $(echo -en "\e") ]]; then
+    read -s -n1 c 2>/dev/null >&2
+    if [[ $c = \[ ]]; then
+      read -s -n1 c 2>/dev/null >&2
+      case $c in
+        A) echo d ;;
+        B) echo e ;;
+        C) echo f ;;
+        D) echo g ;;
+      esac
+    fi
+  elif [[ "$c" == "$(echo -en \\x0A)" ]]; then
+    echo enter
+  fi
 }
- FOOT(){ MARK;TPUT 41 1;$E "\033[0m\033[47;30m└────────────────────────────────────────────────────────────────────────────────┘\033[0m";UNMARK;}
-#
-  M0(){ TPUT  6 3; $e " Установка                                                          \e[32m Install \e[0m";}
-  M1(){ TPUT  7 3; $e " Kраткий обзор                                                     \e[32m Synopsis \e[0m";}
-  M2(){ TPUT  8 3; $e " Описание                                                       \e[32m Description \e[0m";}
-  M3(){ TPUT  9 3; $e " Автор                                                               \e[32m Author \e[0m";}
-  M4(){ TPUT 10 3; $e " Смотрите также                                                    \e[32m See Also \e[0m";}
-  M5(){ TPUT 11 3; $e " Окружающая среда                                               \e[32m Environment \e[0m";}
-  M6(){ TPUT 12 3; $e " Диагностика                                                    \e[32m Diagnostics \e[0m";}
-  M7(){ TPUT 13 3; $e " Ошибки                                                                \e[32m Bugs \e[0m";}
-  M8(){ TPUT 14 3; $e " Файл                                                                  \e[32m File \e[0m";}
-#
-  M9(){ TPUT 17 3; $e " Manual: print manual page                                         \e[32m -m --man \e[0m";}
- M10(){ TPUT 18 3; $e " Help: print synopsis and options                                 \e[32m -h --help \e[0m";}
- M11(){ TPUT 19 3; $e " Version: show version number                                  \e[32m -V --version \e[0m";}
- M12(){ TPUT 20 3; $e " Показать, имена успешно переименованных файлов                \e[32m -v --verbose \e[0m";}
- M13(){ TPUT 21 3; $e " Использовать в качестве разделителя записей при чтении из STDIN  \e[32m -0 --null \e[0m";}
- M14(){ TPUT 22 3; $e " Показать, какие файлы были бы переименованы                      \e[32m -n --nono \e[0m";}
- M15(){ TPUT 23 3; $e " Принудительно перезаписать существующие файлы                   \e[32m -f --force \e[0m";}
- M16(){ TPUT 24 3; $e " Переименовать полный путь                                \e[32m --path --fullpath \e[0m";}
- M17(){ TPUT 25 3; $e " Не переименовывать каталог             \e[32m -d --filename --nopath --nofullpath \e[0m";}
- M18(){ TPUT 26 3; $e " Обрабатывайте имена файлов как строки Perl         \e[32m -u --unicode [encoding] \e[0m";}
- M19(){ TPUT 27 3; $e " Выражение: код для работы с именем файла                                \e[32m -e \e[0m";}
- M20(){ TPUT 28 3; $e " Утверждение: код работы с именем файла, как -e, но заканчивающийся \";\"  \e[32m -E \e[0m";}
-#
- M21(){ TPUT 30 3; $e " Удалим лишний символ в именах файлов                    \e[32m rename 's/\-//g' * \e[0m";}
- M22(){ TPUT 31 3; $e " Массовое переименование файлов                         \e[32m rename 's/\+/_/g' * \e[0m";}
- M23(){ TPUT 32 3; $e " Преобразование регистров (верхний в нижний и наоборот)                      ";}
- M24(){ TPUT 33 3; $e " Изменим расширение всех файлов            \e[32m rename 's/\.html$/\.php/' *.html \e[0m";}
- M25(){ TPUT 34 3; $e " использовать переименование для перемещения файлов между каталогами         ";}
-#
- M26(){ TPUT 36 3; $e " Grannik Git                                                                 ";}
-#
- M27(){ TPUT 39 3; $e " Exit                                                                        ";}
-LM=27
-   MENU(){ for each in $(seq 0 $LM);do M${each};done;}
-    POS(){ if [[ $cur == up ]];then ((i--));fi
-           if [[ $cur == dn ]];then ((i++));fi
-           if [[ $i -lt 0   ]];then i=$LM;fi
-           if [[ $i -gt $LM ]];then i=0;fi;}
-REFRESH(){ after=$((i+1)); before=$((i-1))
-           if [[ $before -lt 0  ]];then before=$LM;fi
-           if [[ $after -gt $LM ]];then after=0;fi
-           if [[ $j -lt $i      ]];then UNMARK;M$before;else UNMARK;M$after;fi
-           if [[ $after -eq 0 ]] || [ $before -eq $LM ];then
-           UNMARK; M$before; M$after;fi;j=$i;UNMARK;M$before;M$after;}
-   INIT(){ R;HEAD;FOOT;MENU;}
-     SC(){ REFRESH;MARK;$S;$b;cur=`ARROW`;}
-# Функция возвращения в меню
-     ES(){ MARK;$e " ENTER = main menu ";$b;read;INIT;};INIT
-  while [[ "$O" != " " ]]; do case $i in
-  0) S=M0;SC; if [[ $cur == enter ]];then R;echo -e "
- Linux поставляется с очень мощным встроенным инструментом под названием\e[32m rename\e[0m
+ C()
+{
+ if [[ $i == d ]];then ((aa--));fi
+ if [[ $i == e ]];then ((aa++));fi
+ if [[ $aa -lt 0  ]];then aa=27;fi
+ if [[ $aa -gt 27 ]];then aa=0;fi;
+}
 
+ D()
+{
+ j1=$((aa+1)); k1=$((aa-1))
+ if [[ $k1 -lt 0   ]];then k1=27;fi
+ if [[ $j1 -gt 27 ]];then j1=0;fi
+ if [[ $aa -lt $aa ]];then echo -en "\e[0m";E$k1;else echo -en "\e[0m";E$j1;fi
+ if [[ $j1 -eq 0   ]] || [ $k1 -eq 27 ];then
+ echo -en "\e[0m" ; E$k1; E$j1;fi;echo -en "\e[0m";E$k1;E$j1;
+}
+ TXa()
+{
+ for (( a=2; a<=39; a++ ))
+  do
+   echo -e "\e[${a};1H\e[47;30m│\e[0m                                                                                \e[47;30m│\e[0m"
+  done
+ echo -en "\e[1;1H\e[0m\e[47;30m┌────────────────────────────────────────────────────────────────────────────────┐\e[0m";
+ echo -en "\e[3;3H\e[1m *** rename ***\e[0m";
+ echo -en "\e[4;3H\e[2m Renames multiple files                     переименовывает несколько файлов\e[0m";
+ echo -en "\e[5;1H\e[47;30m├\e[0m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
+ echo -en "\e[15;1H\e[47;30m├\e[0m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
+ echo -en "\e[16;3H\e[36m Oпции                                                               Options\e[0m";
+ echo -en "\e[29;1H\e[47;30m├\e[0m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
+ echo -en "\e[35;1H\e[47;30m├\e[0m────────────────────────────────────────────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
+ echo -en "\e[37;1H\e[47;30m├\e[0m─ \xE2\x86\x91 Up ───── \xE2\x86\x93 Down ──── \xe2\x86\xb2 Select Enter ────────────────────────────────────────\e[0m\e[47;30m┤\e[0m";
+ echo -en "\e[40;1H\e[0m\e[47;30m└────────────────────────────────────────────────────────────────────────────────┘\e[0m";
+}
+  E0(){ echo -en "\e[6;3H Установка                                                          \e[32m Install \e[0m";}
+  E1(){ echo -en "\e[7;3H Kраткий обзор                                                     \e[32m Synopsis \e[0m";}
+  E2(){ echo -en "\e[8;3H Описание                                                       \e[32m Description \e[0m";}
+  E3(){ echo -en "\e[9;3H Автор                                                               \e[32m Author \e[0m";}
+  E4(){ echo -en "\e[10;3H Смотрите также                                                    \e[32m See Also \e[0m";}
+  E5(){ echo -en "\e[11;3H Окружающая среда                                               \e[32m Environment \e[0m";}
+  E6(){ echo -en "\e[12;3H Диагностика                                                    \e[32m Diagnostics \e[0m";}
+  E7(){ echo -en "\e[13;3H Ошибки                                                                \e[32m Bugs \e[0m";}
+  E8(){ echo -en "\e[14;3H Файл                                                                  \e[32m File \e[0m";}
+  E9(){ echo -en "\e[17;3H Manual: print manual page                                         \e[32m -m --man \e[0m";}
+ E10(){ echo -en "\e[18;3H Help: print synopsis and options                                 \e[32m -h --help \e[0m";}
+ E11(){ echo -en "\e[19;3H Version: show version number                                  \e[32m -V --version \e[0m";}
+ E12(){ echo -en "\e[20;3H Показать, имена успешно переименованных файлов                \e[32m -v --verbose \e[0m";}
+ E13(){ echo -en "\e[21;3H Использовать в качестве разделителя записей при чтении из STDIN  \e[32m -0 --null \e[0m";}
+ E14(){ echo -en "\e[22;3H Показать, какие файлы были бы переименованы                      \e[32m -n --nono \e[0m";}
+ E15(){ echo -en "\e[23;3H Принудительно перезаписать существующие файлы                   \e[32m -f --force \e[0m";}
+ E16(){ echo -en "\e[24;3H Переименовать полный путь                                \e[32m --path --fullpath \e[0m";}
+ E17(){ echo -en "\e[25;3H Не переименовывать каталог             \e[32m -d --filename --nopath --nofullpath \e[0m";}
+ E18(){ echo -en "\e[26;3H Обрабатывайте имена файлов как строки Perl         \e[32m -u --unicode [encoding] \e[0m";}
+ E19(){ echo -en "\e[27;3H Выражение: код для работы с именем файла                                \e[32m -e \e[0m";}
+ E20(){ echo -en "\e[28;3H Утверждение: код работы с именем файла, как -e, но заканчивающийся \";\"  \e[32m -E \e[0m";}
+ E21(){ echo -en "\e[30;3H Удалим лишний символ в именах файлов                    \e[32m rename 's/\-//g' * \e[0m";}
+ E22(){ echo -en "\e[31;3H Массовое переименование файлов                          \e[32m rename 's/a/b/g' * \e[0m";}
+ E23(){ echo -en "\e[32;3H Преобразование регистров (верхний в нижний и наоборот)                      ";}
+ E24(){ echo -en "\e[33;3H Изменим расширение всех файлов            \e[32m rename 's/\.html$/\.php/' *.html \e[0m";}
+ E25(){ echo -en "\e[34;3H использовать переименование для перемещения файлов между каталогами         ";}
+ E26(){ echo -en "\e[36;3H                                                                        \e[34m Git \e[0m";}
+ E27(){ echo -en "\e[38;3H                                                                       \e[34m Exit \e[0m";}
+ INI(){ echo -en "\ec" ;stty sane;TXa;A; };INI
+ while [[ "$l1" != " " ]]; do case $aa in
+  0)D;echo -en "\e[47;30m"; (E0);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
+ Linux поставляется с очень мощным встроенным инструментом под названием\e[32m rename\e[0m
 \e[32m sudo apt install rename\e[0m
-";ES;fi;;
-  1) S=M1;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  1)D;echo -en "\e[47;30m"; (E1);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
 \e[32m rename [-h|-m|-V][-v][-0][-n][-f][-d][-u[enc]][-e|-E\e[0m
 
  perlexpr: регулярные выражения для Perl:
@@ -108,88 +100,89 @@ REFRESH(){ after=$((i+1)); before=$((i-1))
 
 \e[32m * \e[0m Звездочка говорит вам переименовать соответствующие файлы в текущем каталоге.
 \e[32m **\e[0m переименовать все соответствующие файлы в подкаталогах.
-";ES;fi;;
-  2) S=M2;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  2)D;echo -en "\e[47;30m"; (E2);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
 \e[32m rename\e[0m переименовывает предоставленные имена файлов в соответствии с правилом,
  указанным в качестве первого аргумента. Аргумент perlexpr представляет собой вы-
  ражение Perl, которое, как ожидается, изменит строку \$_ в Perl по крайней мере
  для некоторых из указанных имен файлов. Если данное имя файла не изменено выраже-
  нием, оно не будет переименовано. Если имена файлов не указаны в командной строке,
  имена файлов будут считаны через стандартный ввод.
-";ES;fi;;
-  3) S=M3;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  3)D;echo -en "\e[47;30m"; (E3);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Larry Wall
-";ES;fi;;
-  4) S=M4;SC; if [[ $cur == enter ]];then R;echo -e "\e[32m
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  4)D;echo -en "\e[47;30m"; (E4);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "\e[32m
  mv, perl
-\e[0m";ES;fi;;
-  5) S=M5;SC; if [[ $cur == enter ]];then R;echo -e "
+\e[0m";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  5)D;echo -en "\e[47;30m"; (E5);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Переменные окружения не используются.
-";ES;fi;;
-  6) S=M6;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  6)D;echo -en "\e[47;30m"; (E6);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Если вы дадите недопустимое выражение Perl, вы получите синтаксическую ошибку.
-";ES;fi;;
-  7) S=M7;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  7)D;echo -en "\e[47;30m"; (E7);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Исходное «переименование» не проверяло наличие целевых имен файлов,
  поэтому его нужно было использовать с осторожностью.
-";ES;fi;;
-  8) S=M8;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  8)D;echo -en "\e[47;30m"; (E8);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Команда «rename» является частью скрипта Perl
  и находится в разделе «/usr/bin/» во многих дистрибутивах Linux.
  Вы можете запустить команду:
 \e[32m which rename\e[0m
  чтобы узнать местоположение команды rename.
-";ES;fi;;
-#
-  9) S=M9;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+  9)D;echo -en "\e[47;30m"; (E9);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
 \e[32m rename -m\e[0m
 ||
 \e[32m rename --man\e[0m
-";ES;fi;;
- 10) S=M10;SC; if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 10)D;echo -en "\e[47;30m";(E10);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
 \e[32m rename -h\e[0m
 ||
 \e[32m rename --help\e[0m
-";ES;fi;;
- 11) S=M11;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 11)D;echo -en "\e[47;30m";(E11);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
 \e[32m rename -V\e[0m
-";ES;fi;;
- 12) S=M12;SC;if [[ $cur == enter ]];then R;echo -e "\e[32m \e[0m";ES;fi;;
- 13) S=M13;SC;if [[ $cur == enter ]];then R;echo -e "\e[32m \e[0m";ES;fi;;
- 14) S=M14;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 12)D;echo -en "\e[47;30m";(E12);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 13)D;echo -en "\e[47;30m";(E13);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 14)D;echo -en "\e[47;30m";(E14);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Никаких действий:
  вывести имена файлов, которые нужно переименовать, но не переименовывать.
-";ES;fi;;
- 15) S=M15;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 15)D;echo -en "\e[47;30m";(E15);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Перезапись существующих файлов. Если вы хотите принудительно перезаписать сущест-
  вующие файлы, используйте параметр «-f», как показано в примере ниже:
 \e[32m rename -f 's/a/b/' *.html\e[0m
-";ES;fi;;
- 16) S=M16;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 16)D;echo -en "\e[47;30m";(E16);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Переименовать полный путь: включая любой компонент каталога. DEFAULT
-\e[32m \e[0m";ES;fi;;
- 17) S=M17;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 17)D;echo -en "\e[47;30m";(E17);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Не переименовывать каталог: переименовывать только компонент имени файла пути.
-\e[32m \e[0m";ES;fi;;
- 18) S=M18;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 18)D;echo -en "\e[47;30m";(E18);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Обрабатывайте имена файлов как строки Perl (Unicode) при запуске пользовательско-
  го кода. Декодировать/кодировать имена файлов, используя кодировку, если она при-
  сутствует. кодировка необязательна: если она опущена, следующим аргументом должна
  быть опция, начинающаяся с \e[32m-\e[0m, например -e.
-";ES;fi;;
- 19) S=M19;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 19)D;echo -en "\e[47;30m";(E19);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Выражение: код для работы с именем файла:
 \e[32m \e[0m
  Может повторяться для создания кода (например, «perl -e»).
  Если нет -e, первый аргумент используется как код.
-";ES;fi;;
- 20) S=M20;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 20)D;echo -en "\e[47;30m";(E20);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Вы также можете написать операторы отдельно:
 \e[32m rename -E 'y/A-Z/a-z/' -E 's/^/my_new_dir\//' *.*\e[0m
-";ES;fi;;
- 21) S=M21;SC;if [[ $cur == enter ]];then R;echo -e "\e[32m \e[0m";ES;fi;;
- 22) S=M22;SC;if [[ $cur == enter ]];then R;echo -e "\e[32m \e[0m";ES;fi;;
- 23) S=M23;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 21)D;echo -en "\e[47;30m";(E21);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 22)D;echo -en "\e[47;30m";(E22);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
+\e[32m rename 's/_resized/0854x0480/' *.jpg\e[0m
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 23)D;echo -en "\e[47;30m";(E23);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Просто используйте следующую команду с выражением perl.
 
  Преобразовать все символы верхнего регистра в нижний регистр:
@@ -197,40 +190,30 @@ REFRESH(){ after=$((i+1)); before=$((i-1))
 
  Нижний регистр в верхний:
 \e[32m rename 'y/a-z/A-Z/' *.html\e[0m
-";ES;fi;;
- 24) S=M24;SC;if [[ $cur == enter ]];then R;echo -e "
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 24)D;echo -en "\e[47;30m";(E24);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Примечание. В приведенной выше команде мы использовали два аргумента.
  Первый аргумент — это выражение perl, которое заменяет .html на .php.
  Второй аргумент — сообщает команде rename заменить все файлы на *.php.
-";ES;fi;;
- 25) S=M25;SC;if [[ $cur == enter ]];then R;echo -e "
-\e[32m rename 'y/A-Z/a-z/;s/^/my_new_dir\//' *.*\e[0m
-";ES;fi;;
 #
- 26) S=M26;SC;if [[ $cur == enter ]];then R;echo -e "
- Mi 13 Jul 2022
-
+ Примечание файлов с расширением .sh на .txt
+\e[32m rename 's/\\.sh\$/\\.txt/' *.sh\e[0m
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 25)D;echo -en "\e[47;30m";(E25);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
+\e[32m rename 'y/A-Z/a-z/;s/^/my_new_dir\//' *.*\e[0m
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 26)D;echo -en "\e[47;30m";(E26);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;echo -e "
  Описание утилиты mRename. Renames multiple files.
  Переименовывает несколько файлов.
-
- a - asciinema     file asciinema файл
- c - circular menu file общее меню
- s - source        file источник
- t - text          file текстовый файл
- l - bash list     file лист
- m - menu          file меню
- n - simple menu   file простое меню
-
  Asciinema:  \e[36m https://asciinema.org/a/508241\e[0m
  Github:     \e[36m https://github.com/GrannikOleg/mRename\e[0m
  Gitlab:     \e[36m https://gitlab.com/grannik/mrename\e[0m
  Sourceforge:\e[36m https://sourceforge.net/projects/mrename/files/\e[0m
  Notabug:    \e[36m https://notabug.org/Grannikoleg/mRename\e[0m
  Codeberg:   \e[36m https://codeberg.org/Grannik/mRename\e[0m
- Bitbucket:  \e[36m https://bitbucket.org/grannikoleg/workspace/projects/MREN\e[0m
+ Bitbucket:  \e[36m https://bitbucket.org/repo/import/3109410\e[0m
  Framagit:   \e[36m https://framagit.org/GrannikOleg/mrename\e[0m
  Gitea:      \e[36m https://try.gitea.io/Grannik/mRename\e[0m
- GFogs: The owner has reached maximum creation limit of 10 repositories.
-";ES;fi;;
- 27) S=M27;SC;if [[ $cur == enter ]];then R;clear;ls -l;exit 0;fi;;
- esac;POS;done
+";echo -en "\e[47;30m ENTER = main menu ";read;INI;fi;;
+ 27)D;echo -en "\e[47;30m";(E27);i=`B`;if [[ $i == enter ]];then echo -en "\ec";stty sane;exit 0;fi;;
+esac;C;done
